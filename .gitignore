@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+.vscode/
+.idea/
+
+# Local preview captures that are not part of the documented gallery.
+preview.png
+screenshots/gameplay-full.png

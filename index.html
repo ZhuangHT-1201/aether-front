@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07110f">
+  <meta name="description" content="Aether Front is a polished, dependency-free real-time strategy game built with JavaScript and Canvas.">
+  <meta property="og:title" content="Aether Front · 星壤前线">
+  <meta property="og:description" content="Gather aether, build a strike force, and destroy the corruption core before it consumes the frontier.">
+  <meta property="og:type" content="website">
+  <title>Aether Front · 星壤前线</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="gameCanvas" aria-label="星壤前线游戏战场"></canvas>
+  <div class="screen-grade" aria-hidden="true"></div>
+  <div class="corner-mark corner-mark--tl" aria-hidden="true"></div>
+  <div class="corner-mark corner-mark--tr" aria-hidden="true"></div>
+
+  <main id="gameHud" class="game-hud is-hidden" aria-hidden="true">
+    <header class="topbar">
+      <section class="brand-lockup" aria-label="游戏名称">
+        <div class="brand-sigil" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M24 3 41 13v22L24 45 7 35V13Z" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            <path d="m24 10 10 6v14l-10 8-10-8V16Z" fill="none" stroke="currentColor" stroke-width="1"/>
+            <path d="M24 16v16M18 19l12 10M30 19 18 29" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="24" cy="24" r="3" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">星壤前线</div>
+          <div class="brand-sub">AETHER FRONT <span>/</span> 远征 07</div>
+        </div>
+      </section>
+
+      <section class="resource-rail" aria-label="资源状态">
+        <div class="resource-chip resource-chip--crystal">
+          <span class="resource-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2 19 8l-2 11-5 3-5-3L5 8Z" fill="currentColor" opacity=".32"/>
+              <path d="M12 2 19 8l-2 11-5 3-5-3L5 8Z M12 2v20M5 8l14 0" fill="none" stroke="currentColor" stroke-width="1.1"/>
+            </svg>
+          </span>
+          <span class="resource-copy">
+            <span class="resource-label">晶能</span>
+            <strong id="crystalValue">480</strong>
+          </span>
+          <span id="incomeValue" class="resource-rate">+0/min</span>
+        </div>
+        <div class="resource-chip">
+          <span class="resource-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="9" cy="8" r="3" fill="currentColor" opacity=".45"/>
+              <circle cx="16" cy="10" r="2.4" fill="currentColor" opacity=".7"/>
+              <path d="M3 20c.5-4 2.5-6 6-6s5.5 2 6 6M14 15c2.8-.4 4.8.6 5.8 3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </span>
+          <span class="resource-copy">
+            <span class="resource-label">舰队编制</span>
+            <strong><span id="supplyValue">4</span><em>/</em><span id="supplyCap">10</span></strong>
+          </span>
+        </div>
+        <div class="resource-chip resource-chip--time">
+          <span class="resource-copy">
+            <span class="resource-label">任务时间</span>
+            <strong id="timeValue">00:00</strong>
+          </span>
+        </div>
+      </section>
+
+      <section class="top-actions">
+        <button id="soundButton" class="icon-button" type="button" aria-label="切换声音" title="切换声音 (M)">
+          <svg class="sound-on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Zm12.5-1.8a7 7 0 0 1 0 9.6M19 4.6a11 11 0 0 1 0 14.8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          <svg class="sound-off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Zm12 1 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+        <button id="pauseButton" class="icon-button" type="button" aria-label="暂停游戏" title="暂停 (P)">
+          <svg viewBox="0 0 24 24"><path d="M7 5v14M17 5v14" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
+        </button>
+        <button id="helpButton" class="icon-button" type="button" aria-label="显示操作帮助" title="操作帮助 (F1)">
+          <span>?</span>
+        </button>
+      </section>
+    </header>
+
+    <aside class="mission-stack">
+      <div class="mission-kicker"><span class="pulse-dot"></span> 当前行动</div>
+      <div class="mission-title" id="missionTitle">肃清腐化巢群</div>
+      <div class="mission-meta">
+        <span>区域 <b>裂隙盆地 · 07</b></span>
+        <span>天气 <b>晶尘风暴</b></span>
+      </div>
+      <div class="objective-list" id="objectiveList">
+        <div class="objective" data-objective="barracks"><span class="objective-node"></span><span>建立一座折跃兵营</span><em>0/1</em></div>
+        <div class="objective" data-objective="army"><span class="objective-node"></span><span>集结 6 名战斗单位</span><em>0/6</em></div>
+        <div class="objective" data-objective="core"><span class="objective-node"></span><span>摧毁敌方母巢</span><em>0/1</em></div>
+      </div>
+    </aside>
+
+    <aside class="threat-panel">
+      <div class="threat-heading">
+        <span>敌群活跃度</span>
+        <b id="threatLabel">低</b>
+      </div>
+      <div class="threat-bars" id="threatBars">
+        <i class="is-active"></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="threat-foot"><span>下一次袭击</span><b id="nextWaveValue">00:32</b></div>
+    </aside>
+
+    <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+    <div id="tipRail" class="tip-rail">
+      <span class="tip-key">提示</span>
+      <span id="tipText">拖动鼠标框选单位，右键移动或攻击。</span>
+      <button id="tipClose" type="button" aria-label="关闭提示">×</button>
+    </div>
+
+    <section id="commandDock" class="command-dock" aria-label="选中单位与指令">
+      <div class="selection-summary">
+        <div class="portrait-frame">
+          <div id="selectionPortrait" class="portrait-art"></div>
+          <span id="selectionTier" class="portrait-tier">I</span>
+        </div>
+        <div class="selection-copy">
+          <div id="selectionName" class="selection-name">拓荒者</div>
+          <div id="selectionRole" class="selection-role">工程单位 · 采集 / 建造</div>
+          <div class="mini-health"><i id="selectionHealth"></i></div>
+          <div class="selection-stats">
+            <span>生命 <b id="selectionHp">100 / 100</b></span>
+            <span id="selectionStatLabel">载能 <b id="selectionStat">8</b></span>
+          </div>
+        </div>
+        <div id="selectionCount" class="selection-count">04</div>
+      </div>
+
+      <div class="unit-strip-wrap">
+        <div class="dock-section-label"><span>作战编组</span><small>SHIFT 追加选择</small></div>
+        <div id="selectionList" class="selection-list"></div>
+      </div>
+
+      <div class="command-section">
+        <div class="dock-section-label">
+          <span>战术指令</span>
+          <small id="commandHint">选择单位以查看可用指令</small>
+        </div>
+        <div id="commandGrid" class="command-grid" role="group" aria-label="战术指令"></div>
+      </div>
+      <div id="commandTooltip" class="command-tooltip" aria-hidden="true"></div>
+    </section>
+
+    <aside class="minimap-panel">
+      <div class="minimap-head">
+        <span><i class="live-dot"></i>战术投影</span>
+        <small>裂隙盆地</small>
+      </div>
+      <canvas id="minimapCanvas" width="260" height="154" aria-label="小地图"></canvas>
+      <div class="minimap-scan" aria-hidden="true"></div>
+      <div class="minimap-foot">
+        <span><kbd>Space</kbd> 返回母舰</span>
+        <span id="zoomValue">100%</span>
+      </div>
+    </aside>
+
+    <div class="control-hints">
+      <span><kbd>WASD</kbd> 移动视野</span>
+      <span><kbd>Q</kbd> 攻击移动</span>
+      <span><kbd>Ctrl</kbd> + <kbd>1-9</kbd> 编队</span>
+    </div>
+
+    <div id="placementHint" class="placement-hint">
+      <span class="placement-icon">+</span>
+      <div><b>部署建筑</b><small>左键确认 · 右键或 ESC 取消</small></div>
+    </div>
+  </main>
+
+  <section id="startScreen" class="start-screen">
+    <div class="start-noise" aria-hidden="true"></div>
+    <div class="start-orbit start-orbit--one" aria-hidden="true"></div>
+    <div class="start-orbit start-orbit--two" aria-hidden="true"></div>
+
+    <div class="intro-shell">
+      <header class="intro-header">
+        <div class="intro-eyebrow"><i></i> AETHER FRONT // TACTICAL OPERATIONS</div>
+        <h1><span>星壤</span>前线</h1>
+        <div class="intro-en">AETHER FRONT</div>
+        <p>坠落在裂隙盆地之后，你是最后一座远征母舰的指挥官。<br>采集晶能，重建兵营，在腐化巢群吞没星门之前将其摧毁。</p>
+      </header>
+
+      <div class="intro-grid">
+        <section class="briefing-card">
+          <div class="panel-corner panel-corner--a"></div>
+          <div class="panel-corner panel-corner--b"></div>
+          <div class="briefing-label"><span>作战简报</span><b>OP. 07-A</b></div>
+          <div class="briefing-body">
+            <div class="sector-map" aria-hidden="true">
+              <svg viewBox="0 0 320 130">
+                <defs>
+                  <linearGradient id="routeGlow" x1="0" x2="1">
+                    <stop offset="0" stop-color="#65f6d2"/>
+                    <stop offset=".55" stop-color="#d6b978"/>
+                    <stop offset="1" stop-color="#ff6b5f"/>
+                  </linearGradient>
+                </defs>
+                <g fill="none" stroke="#4b6a61" stroke-width=".6" opacity=".55">
+                  <path d="M18 106 59 34l52 17 25-31 64 58 45-52 57 48"/>
+                  <path d="M15 70l54-14 33 46 48-27 55 33 41-49 61 24"/>
+                  <path d="m61 34-9 72M186 34l3 74M284 26l18 68"/>
+                </g>
+                <path d="M65 74C115 29 195 30 261 73" fill="none" stroke="url(#routeGlow)" stroke-width="1.4" stroke-dasharray="4 5"/>
+                <circle cx="65" cy="74" r="14" fill="#52e3c05c"/>
+                <circle cx="65" cy="74" r="6" fill="#72f7d1"/>
+                <circle cx="261" cy="73" r="17" fill="#ff60494d"/>
+                <circle cx="261" cy="73" r="8" fill="#ff7b69"/>
+                <path d="M261 55v38M242 73h38" stroke="#ff7b69" stroke-width=".8" opacity=".8"/>
+                <text x="54" y="102" fill="#8ab5a9" font-size="6" letter-spacing="1">母舰信标</text>
+                <text x="245" y="102" fill="#c98b82" font-size="6" letter-spacing="1">腐化巢群</text>
+              </svg>
+            </div>
+            <div class="briefing-facts">
+              <span>任务类型 <b>基地攻防</b></span>
+              <span>预计时长 <b>8–12 分钟</b></span>
+              <span>指挥模式 <b>单人战术</b></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="difficulty-card">
+          <div class="difficulty-head">
+            <div>
+              <span class="small-label">威胁协议</span>
+              <h2>选择作战难度</h2>
+            </div>
+            <div id="difficultyCode" class="difficulty-code">02</div>
+          </div>
+          <div id="difficultyOptions" class="difficulty-options" role="radiogroup" aria-label="游戏难度">
+            <button type="button" data-difficulty="cadet" role="radio" aria-checked="false">
+              <span>01</span><b>新兵</b><small>较慢的敌袭节奏</small>
+            </button>
+            <button type="button" data-difficulty="veteran" class="is-selected" role="radio" aria-checked="true">
+              <span>02</span><b>老兵</b><small>标准战术压力</small>
+            </button>
+            <button type="button" data-difficulty="nightmare" role="radio" aria-checked="false">
+              <span>03</span><b>梦魇</b><small>高频敌袭与强韧敌军</small>
+            </button>
+          </div>
+          <div class="difficulty-readout">
+            <span>预计压力 <i id="pressureBars"><b></b><b></b><b></b></i></span>
+            <span>协议奖励 <b id="protocolReward">战术档案 × 1.25</b></span>
+          </div>
+        </section>
+      </div>
+
+      <div class="intro-actions">
+        <div class="control-brief">
+          <div><kbd>左键</kbd><span>选择 / 下达指令</span></div>
+          <div><kbd>右键</kbd><span>移动 / 攻击 / 采集</span></div>
+          <div><kbd>WASD</kbd><span>移动战术视野</span></div>
+        </div>
+        <button id="startButton" class="start-button" type="button">
+          <span class="start-button-glint"></span>
+          <span class="button-index">01</span>
+          <span class="button-copy"><b>开始作战</b><small>DEPLOY TO THE FRONT</small></span>
+          <span class="button-arrow">→</span>
+        </button>
+      </div>
+      <div class="intro-foot">
+        <span>此区域连接已加密</span>
+        <span class="intro-status"><i></i> 母舰同步正常</span>
+        <span>v1.0.7 // canvas tactical system</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="pauseScreen" class="modal-screen is-hidden" aria-hidden="true">
+    <div class="modal-card modal-card--small">
+      <span class="modal-kicker">TACTICAL LINK SUSPENDED</span>
+      <h2>战术链路已暂停</h2>
+      <p>战场时间已冻结，母舰系统保持在线。</p>
+      <div class="modal-actions">
+        <button id="resumeButton" class="primary-button" type="button">继续作战</button>
+        <button id="restartButton" class="secondary-button" type="button">重新部署</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="endScreen" class="modal-screen is-hidden" aria-hidden="true">
+    <div class="modal-card">
+      <div id="endEmblem" class="end-emblem">
+        <svg viewBox="0 0 80 80">
+          <path d="m40 5 30 17v36L40 75 10 58V22Z" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <path d="m27 40 9 9 18-20" fill="none" stroke="currentColor" stroke-width="3"/>
+        </svg>
+      </div>
+      <span id="endKicker" class="modal-kicker">MISSION ACCOMPLISHED</span>
+      <h2 id="endTitle">裂隙已肃清</h2>
+      <p id="endCopy">腐化母巢停止响应，星门航道重新开放。</p>
+      <div class="result-stats">
+        <div><span>行动时间</span><b id="resultTime">00:00</b></div>
+        <div><span>歼灭单位</span><b id="resultKills">0</b></div>
+        <div><span>采集晶能</span><b id="resultCrystals">0</b></div>
+        <div><span>幸存部队</span><b id="resultSurvivors">0</b></div>
+      </div>
+      <div class="modal-actions">
+        <button id="endRestartButton" class="primary-button" type="button">再次部署</button>
+        <button id="endCloseButton" class="secondary-button" type="button">观察战场</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="helpScreen" class="help-screen is-hidden" aria-hidden="true">
+    <div class="help-card">
+      <header>
+        <div><span>作战手册</span><h2>战术控制协议</h2></div>
+        <button id="helpCloseButton" type="button" aria-label="关闭帮助">×</button>
+      </header>
+      <div class="help-grid">
+        <section>
+          <h3>战场控制</h3>
+          <p><kbd>鼠标左键</kbd><span>选择单位或建筑，拖动可框选</span></p>
+          <p><kbd>鼠标右键</kbd><span>移动、攻击、采集或交付任务</span></p>
+          <p><kbd>WASD</kbd><span>移动视野，鼠标移至边缘也可平移</span></p>
+          <p><kbd>滚轮</kbd><span>缩放战术视野</span></p>
+        </section>
+        <section>
+          <h3>快速指令</h3>
+          <p><kbd>Q</kbd><span>攻击移动：沿途消灭敌人</span></p>
+          <p><kbd>S</kbd><span>停止当前行动</span></p>
+          <p><kbd>Space</kbd><span>将视野移回母舰</span></p>
+          <p><kbd>P</kbd><span>暂停 / 继续游戏</span></p>
+        </section>
+        <section>
+          <h3>编队与生产</h3>
+          <p><kbd>Shift</kbd><span>追加选择，或一次安排多个单位</span></p>
+          <p><kbd>Ctrl + 1-9</kbd><span>保存当前作战编组</span></p>
+          <p><kbd>1-9</kbd><span>呼叫已保存的作战编组</span></p>
+          <p><kbd>ESC</kbd><span>取消建造放置或关闭窗口</span></p>
+        </section>
+        <section class="help-note">
+          <h3>指挥官建议</h3>
+          <p>优先让拓荒者持续采集晶体，在人口接近上限时建造栖息舱。重装守卫适合吸收伤害，长弓手则应在守卫身后输出。</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <script src="game.js"></script>
+</body>
+</html>

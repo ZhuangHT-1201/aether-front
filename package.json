@@ -1,0 +1,27 @@
+{
+  "name": "aether-front",
+  "version": "1.0.7",
+  "private": true,
+  "description": "A polished, dependency-free real-time strategy game for the browser.",
+  "author": "Evan Zhuang",
+  "license": "MIT",
+  "homepage": "https://zhuanght-1201.github.io/aether-front/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZhuangHT-1201/aether-front.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ZhuangHT-1201/aether-front/issues"
+  },
+  "keywords": [
+    "rts",
+    "strategy-game",
+    "browser-game",
+    "canvas",
+    "javascript"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check game.js && node --check server.js"
+  }
+}
