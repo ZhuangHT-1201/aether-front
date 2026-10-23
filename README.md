@@ -64,7 +64,7 @@ You can also open `index.html` directly. A local server is recommended for consi
 
 ### Option 2 — Play online
 
-Once GitHub Pages is enabled for the repository, the game is available at:
+The latest build is deployed automatically to GitHub Pages:
 
 **https://zhuanght-1201.github.io/aether-front/**
 
